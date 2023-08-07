@@ -1,15 +1,15 @@
+from multiprocessing import Process
+import os
+import re
+from datetime import date, timedelta
+from time import sleep
+
+import pandas as pd
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import threading
 from selenium import webdriver
-import pandas as pd
-import os
-from selenium.webdriver.common.by import By
-from time import sleep
-import re
-from datetime import date, timedelta
-from multiprocessing import Process
 
 current_day = date.today()
 patterns = [r"(\d+) days ago - €(\d+)", r"(\d+) day ago - €(\d+)", "Today - €(\d+)"]
@@ -39,8 +39,8 @@ class ScrapeThread(Process):
     def scrape(self, driver, departs_from, arrives_at, date, retries = 0):
         if retries >= 6:
             return
-        cur_file_name = '{}-{}.csv'.format(departs_from, arrives_at)
-        cur_dir = '../data/{}/'.format(date)
+        cur_file_name = '{}.csv'.format(date)
+        cur_dir = '../data/{}-{}/'.format(departs_from, arrives_at)
         
         df = pd.DataFrame({
             "Price at Date":[],
@@ -60,7 +60,7 @@ class ScrapeThread(Process):
             if len(buttons) > 0:
                 buttons[0].click()
             
-            # e.5nter departure
+            # enter departure
             departs_field = wait_for_elements(driver, (By.TAG_NAME, 'input'))[0]
             departs_field.clear()
             departs_field.send_keys(departs_from)
@@ -72,9 +72,10 @@ class ScrapeThread(Process):
             arrives_field = wait_for_elements(driver, (By.TAG_NAME, 'input'))[2]
             arrives_field.clear()
             arrives_field.send_keys(arrives_at)
-            #sleep(IDLE_TIME)
             arrives_at_listbox = wait_for_element(driver, (By.CLASS_NAME, 'DFGgtd'))
+
             sleep(IDLE_TIME)
+            
             arrives_at_listbox.find_elements(By.TAG_NAME, 'li')[0].click()
 
             # input date
