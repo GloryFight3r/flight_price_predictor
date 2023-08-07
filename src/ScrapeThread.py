@@ -15,8 +15,8 @@ current_day = date.today()
 patterns = [r"(\d+) days ago - €(\d+)", r"(\d+) day ago - €(\d+)", "Today - €(\d+)"]
 
 
-IDLE_TIME = 1.4
-WAIT_TIME = 2.5
+IDLE_TIME = 3
+WAIT_TIME = 5
 
 class ScrapeThread(Process):
     def __init__(self, url, work_list):
@@ -39,8 +39,8 @@ class ScrapeThread(Process):
     def scrape(self, driver, departs_from, arrives_at, date, retries = 0):
         if retries >= 6:
             return
-        cur_file_name = '{}.csv'.format(date)
-        cur_dir = '../data/{}-{}/'.format(departs_from, arrives_at)
+        cur_file_name = '{}-{}-{}.csv'.format(departs_from, arrives_at, date)
+        cur_dir = '../data/multiple_data/'
         
         df = pd.DataFrame({
             "Price at Date":[],
@@ -61,11 +61,12 @@ class ScrapeThread(Process):
                 buttons[0].click()
             
             # enter departure
+            sleep(IDLE_TIME)
+
             departs_field = wait_for_elements(driver, (By.TAG_NAME, 'input'))[0]
             departs_field.clear()
             departs_field.send_keys(departs_from)
             departs_from_listbox = wait_for_element(driver, (By.CLASS_NAME, 'DFGgtd'))
-            sleep(IDLE_TIME)
             departs_from_listbox.find_elements(By.TAG_NAME, 'li')[0].click()
             
             # enter arrival
@@ -74,22 +75,21 @@ class ScrapeThread(Process):
             arrives_field.send_keys(arrives_at)
             arrives_at_listbox = wait_for_element(driver, (By.CLASS_NAME, 'DFGgtd'))
 
-            sleep(IDLE_TIME)
-            
             arrives_at_listbox.find_elements(By.TAG_NAME, 'li')[0].click()
 
             # input date
-            sleep(IDLE_TIME)
+            sleep(1)
             date_field = wait_for_elements(driver, (By.TAG_NAME, 'input'))[4]
             date_field.clear()
             for i in range(10):
                 date_field.send_keys(Keys.BACKSPACE)
             date_field.send_keys(date)
 
+            sleep(1)
             # click on button to search
             search_button = wait_to_be_clickable(driver, (By.CSS_SELECTOR, '[aria-label=Search]'))
             search_button.click()
-            sleep(IDLE_TIME)
+            sleep(3)
             
             overlap_button = wait_to_be_clickable(driver, (By.CLASS_NAME, 'I0Kcef'))
             if overlap_button != None:
@@ -97,7 +97,7 @@ class ScrapeThread(Process):
 
             wait_to_be_clickable(driver, (By.XPATH, "//div[text()='View price history']")).click()
 
-            sleep(IDLE_TIME)
+            sleep(2)
             prices = wait_for_elements(driver, (By.CLASS_NAME, 'pKrx3d-JNdkSc'))
             print(len(prices), departs_from, arrives_at)
             if len(prices) == 0:
