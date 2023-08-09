@@ -1,7 +1,5 @@
-
-python3 -m venv venv
+virtualenv venv
 
 . venv/bin/activate
 
-pip3 install -e '.[prod]'
-
+pip3 install -r requirements.txt
