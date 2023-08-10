@@ -5,17 +5,23 @@ from datetime import date, timedelta
 from time import sleep
 
 import pandas as pd
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 
+# get current date
 current_day = date.today()
+
+# pattern to look for while matching
 patterns = [r"(\d+) days ago - €(\d+)", r"(\d+) day ago - €(\d+)", "Today - €(\d+)"]
 
-
+# wait time between pages loading
 IDLE_TIME = 3
+
+# wait time for elements to appear/become clickable
 WAIT_TIME = 5
 
 class ScrapeThread(Process):
@@ -23,24 +29,30 @@ class ScrapeThread(Process):
         Process.__init__(self)
         self.url = url
 
+        # flights to be scraped by current worker
         self.work_list = work_list
 
     def run(self):
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        options.add_argument('--headless') # do not show the browser
 
         driver = webdriver.Chrome(options=options)
         driver.set_window_size(1920, 1080)
+
         for departs_from, arrives_at, date in self.work_list:
             self.scrape(driver, departs_from, arrives_at, date)
         
         driver.close()
 
-    def scrape(self, driver, departs_from, arrives_at, date, retries = 0):
-        if retries >= 6:
+    def scrape(self, driver, departs_from: str, arrives_at: str, date: str, retries: int = 0):
+        # IMPORTANT
+        # Worker might fail scraping a page if some element has not been successfully loaded
+        # therefore we might have to retry scraping it
+
+        if retries >= 6: # we give the worker 6 tries to scrape the page
             return
-        cur_file_name = '{}-{}-{}.csv'.format(departs_from, arrives_at, date)
-        cur_dir = '../data/multiple_data/'
+        cur_file_name:str = '{}-{}-{}.csv'.format(departs_from, arrives_at, date)
+        cur_dir:str = '../data/multiple_data/'
         
         df = pd.DataFrame({
             "Price at Date":[],
@@ -82,15 +94,17 @@ class ScrapeThread(Process):
             date_field = wait_for_elements(driver, (By.TAG_NAME, 'input'))[4]
             date_field.clear()
             for i in range(10):
-                date_field.send_keys(Keys.BACKSPACE)
+                date_field.send_keys(Keys.BACKSPACE) # delete the date in the current field
             date_field.send_keys(date)
 
             sleep(1)
             # click on button to search
             search_button = wait_to_be_clickable(driver, (By.CSS_SELECTOR, '[aria-label=Search]'))
             search_button.click()
+
             sleep(3)
             
+            # close the tab that might have been opened and overlap with the graph show button
             overlap_button = wait_to_be_clickable(driver, (By.CLASS_NAME, 'I0Kcef'))
             if overlap_button != None:
                 overlap_button.click()
@@ -98,6 +112,7 @@ class ScrapeThread(Process):
             wait_to_be_clickable(driver, (By.XPATH, "//div[text()='View price history']")).click()
 
             sleep(2)
+
             prices = wait_for_elements(driver, (By.CLASS_NAME, 'pKrx3d-JNdkSc'))
             print(len(prices), departs_from, arrives_at)
             if len(prices) == 0:
@@ -112,7 +127,8 @@ class ScrapeThread(Process):
 
                 for k, pattern in enumerate(patterns):
                     match = re.search(pattern, info)
-
+                    
+                    # there are three match cases and we go through each of them until we find a match
                     if match:
                         has_matched = True
                         day = 0
@@ -131,10 +147,21 @@ class ScrapeThread(Process):
             print(e)
             self.scrape(driver, departs_from, arrives_at, date, retries + 1)
             return
+        # we need the line below in case you want to gather more data by running the scraper on a later day
+        # we keep the newest data
         df.drop_duplicates(subset=['Price at Date'], keep="last", inplace=True)
         df.to_csv(cur_dir + cur_file_name, index=False)
 
 def wait_for_element(cur_driver, wanted):
+    """ Wait for the element to become clickable
+
+    Args:
+        cur_driver (): web driver
+        wanted (): (By.*, [path])
+
+    Returns: Either the element or None if no such element becomes clickable
+        
+    """
     try:
         element = WebDriverWait(cur_driver, WAIT_TIME).until(
           EC.element_to_be_clickable(wanted),
@@ -144,6 +171,16 @@ def wait_for_element(cur_driver, wanted):
         return None
 
 def wait_to_be_clickable(cur_driver, wanted):
+    """ Wait for the element to be clickable
+
+    Args:
+        cur_driver (): web driver
+        wanted (): (By.*, [path])
+
+
+    Returns: Either the element or None if no such element becomes clickable
+        
+    """
     try:
         element = WebDriverWait(cur_driver, WAIT_TIME).until(
             EC.element_to_be_clickable(wanted),
@@ -153,6 +190,15 @@ def wait_to_be_clickable(cur_driver, wanted):
         return None
 
 def wait_for_elements(cur_driver, wanted):
+    """ Wait for elements to be present
+
+    Args:
+        cur_driver (): web driver
+        wanted (): (By.*, [path])
+
+    Returns: Either a list of elements or None if no such elements appear
+
+    """
     try:
         element = WebDriverWait(cur_driver, WAIT_TIME).until(
             EC.presence_of_all_elements_located(wanted)
