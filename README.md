@@ -1,8 +1,12 @@
 # Flight price predictor
 
-After covid's outbreak in last few years we have seen a significant change in how flight price calculations change in time. Some sources even claim that some of the leading search engines have reduced the number of "predictive ingisghts" they used to provide to the users [source](https://www.wired.com/story/airfare-prediction-tools/). 
+After covid's outbreak in last few years we have seen a significant change in how flight prices change 
+in time before the day of departure. Some sources even claim that some of the leading search engines have 
+reduced the number of "predictive insights" they used to provide to the users [source](https://www.wired.com/story/airfare-prediction-tools/)
+due to newly added hard to predict factors. 
 
-This project's goal is to create a model that gives a close prediction for a set amount of days in the future by first gathering flight prices data by scraping Google Flight's website.
+This project's goal is to create a model that gives a close prediction for a set amount of days in the future 
+by first gathering flight prices data by scraping Google Flight's website.
 
 ## Overview of the project
 
