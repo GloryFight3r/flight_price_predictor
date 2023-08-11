@@ -8,8 +8,13 @@ flight_locations: [
     "Budapest",
     "Copenhagen",
     "Amsterdam",
-    "Berlin"
+    "Berlin",
+    "Copenhagen",
+    "Luxembourg",
+    "London",
+    "Dublin",
+    "Vienna"
 ]
-start_date: 11
-end_date: 15
-WORKERS: 6
+start_date: 12
+end_date: 31
+WORKERS: 7
